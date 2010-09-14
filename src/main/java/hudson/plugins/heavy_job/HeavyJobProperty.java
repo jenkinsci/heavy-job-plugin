@@ -77,7 +77,7 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
                 }
 
                 public String getDisplayName() {
-                    return "place holder for "+getProject().getDisplayName();
+                    return Messages.HeavyJobProperty_SubTaskDisplayName(getProject().getDisplayName());
                 }
 
                 private AbstractProject<?, ?> getProject() {
@@ -91,7 +91,7 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
     public static class DescriptorImpl extends JobPropertyDescriptor {
         @Override
         public String getDisplayName() {
-            return "This project occupies multiple executors";
+            return Messages.HeavyJobProperty_DisplayName();
         }
     }
 

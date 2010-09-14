@@ -1,0 +1,12 @@
+<div>
+    Specify the number of executors that this job needs to occupy.
+    Setting this to a bigger value is useful if your job is known to consume multiple threads,
+    so that the scheduling decision is done accordingly &mdash; for example, say your job
+    runs tests with 4 threads simultaneously. Specifying 4 makes Hudson schedule your builds
+    to only run on a slave with 4 or more executors, and if your build is then run
+    on a slave with 5 executors, the slave will have just one more available executor, making
+    it that much less likely for Hudson to schedule additional builds on the same node.
+
+    <p>
+    Specifying 0 here is the same as specifying 1.
+</div>

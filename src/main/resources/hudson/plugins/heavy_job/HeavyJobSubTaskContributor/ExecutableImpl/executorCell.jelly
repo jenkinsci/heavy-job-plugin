@@ -25,14 +25,14 @@ THE SOFTWARE.
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
   <td class="pane">
     <div style="white-space: normal">${%Occupied by}
-      <j:set var="build" value="${it.build}" />
+      <j:set var="ownerexe" value="${it.ownerExecutable}" />
       <j:invokeStatic var="exeparent"
          className="hudson.model.queue.Executables" method="getParentOf">
         <j:arg type="hudson.model.Queue$Executable" value="${it}" />
       </j:invokeStatic>
       <j:choose>
         <j:when test="${h.hasPermission(exeparent,exeparent.READ)}">
-          <a href="${rootURL}/${exeparent.ownerTask.url}" class="model-link">${exeparent.ownerTask.fullDisplayName}</a>&#160;<a href="${rootURL}/${build.url}" class="model-link">#${build.number}</a>
+          <a href="${rootURL}/${exeparent.ownerTask.url}" class="model-link">${exeparent.ownerTask.fullDisplayName}</a>&#160;<a href="${rootURL}/${ownerexe.url}" class="model-link">#${ownerexe.number}</a>
         </j:when>
         <j:otherwise>
           <span>${%Unknown Task}</span>

@@ -24,22 +24,10 @@
 package hudson.plugins.heavy_job;
 
 import hudson.Extension;
-import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
-import hudson.model.Executor;
 import hudson.model.JobProperty;
 import hudson.model.JobPropertyDescriptor;
-import hudson.model.Queue.Executable;
-import hudson.model.Queue.Task;
-import hudson.model.queue.AbstractSubTask;
-import hudson.model.queue.SubTask;
-import hudson.matrix.MatrixProject;
-import hudson.matrix.MatrixConfiguration;
 import org.kohsuke.stapler.DataBoundConstructor;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Keeps track of the number of executors that need to be consumed for this job.
@@ -54,22 +42,6 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
         this.weight = weight;
     }
 
-    @Override
-    public List<SubTask> getSubTasks() {
-        List<SubTask> r = new ArrayList<SubTask>();
-        if (this.owner instanceof MatrixProject) {
-            for (AbstractProject<?,?> project :
-                    ((MatrixProject) this.owner).getActiveConfigurations()) {
-                for (int i=1; i<weight; i++)
-                    r.add(new WeightSubTask(project));
-            }
-        } else {
-            for (int i=1; i<weight; i++)
-                r.add(new WeightSubTask(this.owner));
-        }
-        return r;
-    }
-
     @Extension
     public static class DescriptorImpl extends JobPropertyDescriptor {
         @Override
@@ -78,59 +50,4 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
         }
     }
 
-    public static class ExecutableImpl implements Executable {
-        private final SubTask parent;
-        private final Executor executor = Executor.currentExecutor();
-
-        private ExecutableImpl(SubTask parent) {
-            this.parent = parent;
-        }
-
-        public SubTask getParent() {
-            return parent;
-        }
-
-        public AbstractBuild<?,?> getBuild() {
-            return (AbstractBuild<?,?>)executor.getCurrentWorkUnit().context.getPrimaryWorkUnit().getExecutable();
-        }
-
-        public void run() {
-            // nothing. we just waste time
-        }
-    }
-
-    public static class WeightSubTask extends AbstractSubTask {
-        private final AbstractProject<?, ?> project;
-
-        public WeightSubTask(AbstractProject<?, ?> project) {
-            this.project = project;
-        }
-
-        public Executable createExecutable() throws IOException {
-            return new ExecutableImpl(this);
-        }
-
-        @Override
-        public Object getSameNodeConstraint() {
-            // must occupy the same node as the project itself
-            return getProject();
-        }
-
-        @Override
-        public long getEstimatedDuration() {
-            return getProject().getEstimatedDuration();
-        }
-
-        public Task getOwnerTask() {
-            return getProject();
-        }
-
-        public String getDisplayName() {
-            return Messages.HeavyJobProperty_SubTaskDisplayName(getProject().getDisplayName());
-        }
-
-        private AbstractProject<?, ?> getProject() {
-            return this.project;
-        }
-    }
 }

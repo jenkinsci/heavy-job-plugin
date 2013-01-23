@@ -33,6 +33,8 @@ import hudson.model.Queue.Executable;
 import hudson.model.Queue.Task;
 import hudson.model.queue.AbstractSubTask;
 import hudson.model.queue.SubTask;
+import hudson.matrix.MatrixProject;
+import hudson.matrix.MatrixConfiguration;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
@@ -55,35 +57,16 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
     @Override
     public List<SubTask> getSubTasks() {
         List<SubTask> r = new ArrayList<SubTask>();
-        for (int i=1; i< weight; i++)
-            r.add(new AbstractSubTask() {
-                public Executable createExecutable() throws IOException {
-                    return new ExecutableImpl(this);
-                }
-
-                @Override
-                public Object getSameNodeConstraint() {
-                    // must occupy the same node as the project itself
-                    return getProject();
-                }
-
-                @Override
-                public long getEstimatedDuration() {
-                    return getProject().getEstimatedDuration();
-                }
-
-                public Task getOwnerTask() {
-                    return getProject();
-                }
-
-                public String getDisplayName() {
-                    return Messages.HeavyJobProperty_SubTaskDisplayName(getProject().getDisplayName());
-                }
-
-                private AbstractProject<?, ?> getProject() {
-                    return HeavyJobProperty.this.owner;
-                }
-            });
+        if (this.owner instanceof MatrixProject) {
+            for (AbstractProject<?,?> project :
+                    ((MatrixProject) this.owner).getActiveConfigurations()) {
+                for (int i=1; i<weight; i++)
+                    r.add(new WeightSubTask(project));
+            }
+        } else {
+            for (int i=1; i<weight; i++)
+                r.add(new WeightSubTask(this.owner));
+        }
         return r;
     }
 
@@ -113,6 +96,41 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
 
         public void run() {
             // nothing. we just waste time
+        }
+    }
+
+    public static class WeightSubTask extends AbstractSubTask {
+        private final AbstractProject<?, ?> project;
+
+        public WeightSubTask(AbstractProject<?, ?> project) {
+            this.project = project;
+        }
+
+        public Executable createExecutable() throws IOException {
+            return new ExecutableImpl(this);
+        }
+
+        @Override
+        public Object getSameNodeConstraint() {
+            // must occupy the same node as the project itself
+            return getProject();
+        }
+
+        @Override
+        public long getEstimatedDuration() {
+            return getProject().getEstimatedDuration();
+        }
+
+        public Task getOwnerTask() {
+            return getProject();
+        }
+
+        public String getDisplayName() {
+            return Messages.HeavyJobProperty_SubTaskDisplayName(getProject().getDisplayName());
+        }
+
+        private AbstractProject<?, ?> getProject() {
+            return this.project;
         }
     }
 }

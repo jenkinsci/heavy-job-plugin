@@ -26,9 +26,13 @@ THE SOFTWARE.
   <td class="pane">
     <div style="white-space: normal">${%Occupied by}
       <j:set var="build" value="${it.build}" />
+      <j:invokeStatic var="exeparent"
+         className="hudson.model.queue.Executables" method="getParentOf">
+        <j:arg type="hudson.model.Queue$Executable" value="${it}" />
+      </j:invokeStatic>
       <j:choose>
-        <j:when test="${h.hasPermission(build.parent,build.parent.READ)}">
-          <a href="${rootURL}/${build.parent.url}">${build.parent.fullDisplayName}</a>&#160;<a href="${rootURL}/${build.url}">#${build.number}</a>
+        <j:when test="${h.hasPermission(exeparent,exeparent.READ)}">
+          <a href="${rootURL}/${exeparent.ownerTask.url}" class="model-link">${exeparent.ownerTask.fullDisplayName}</a>&#160;<a href="${rootURL}/${build.url}" class="model-link">#${build.number}</a>
         </j:when>
         <j:otherwise>
           <span>${%Unknown Task}</span>

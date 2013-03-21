@@ -24,20 +24,30 @@
 package hudson.plugins.heavy_job;
 
 import hudson.Extension;
+import hudson.model.BuildListener;
+import hudson.model.Environment;
+import hudson.model.EnvironmentList;
+import hudson.model.JobProperty;
+import hudson.model.JobPropertyDescriptor;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Executor;
-import hudson.model.JobProperty;
-import hudson.model.JobPropertyDescriptor;
+import hudson.model.Job;
 import hudson.model.Queue.Executable;
 import hudson.model.Queue.Task;
 import hudson.model.queue.AbstractSubTask;
 import hudson.model.queue.SubTask;
-import org.kohsuke.stapler.DataBoundConstructor;
+import hudson.model.queue.WorkUnit;
+import hudson.model.queue.WorkUnitContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * Keeps track of the number of executors that need to be consumed for this job.
@@ -45,11 +55,47 @@ import java.util.List;
  * @author Kohsuke Kawaguchi
  */
 public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
+    
+    private static final Logger LOGGER = Logger.getLogger(HeavyJobProperty.class.getName());
+    
     public final int weight;
+    public final boolean sameNode;
 
     @DataBoundConstructor
-    public HeavyJobProperty(int weight) {
+    public HeavyJobProperty(int weight, boolean sameNode) {
         this.weight = weight;
+        this.sameNode = sameNode;
+    }
+
+    @Override
+    public boolean prebuild(final AbstractBuild<?, ?> build, BuildListener listener) {
+        EnvironmentList environments = build.getEnvironments();
+        environments.add(new Environment() {
+
+            @Override
+            public void buildEnvVars(Map<String, String> env) {
+                Executor executor = Executor.currentExecutor();
+                WorkUnitContext context = executor.getCurrentWorkUnit().context;
+                List<WorkUnit> workUnits = context.getWorkUnits();
+                //Collection<? extends SubTask> subTasks = Tasks.getSubTasksOf(context.task);
+                StringBuilder b = new StringBuilder();
+                for (Iterator<WorkUnit> i = workUnits.iterator(); i.hasNext(); ) {
+                    WorkUnit unit = i.next();
+                    try {
+                        b.append(unit.getExecutor().getOwner().getHostName());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    if (i.hasNext()) {
+                        b.append(",");
+                    }
+                }
+                LOGGER.info(build.getFullDisplayName() + " executors IP addresses: " + b);
+                env.put("EXECUTORS_IPS", b.toString());
+            }
+            
+        });
+        return true;
     }
 
     @Override
@@ -64,7 +110,7 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
                 @Override
                 public Object getSameNodeConstraint() {
                     // must occupy the same node as the project itself
-                    return getProject();
+                    return sameNode ? getProject() : null;
                 }
 
                 @Override
@@ -93,6 +139,11 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
         public String getDisplayName() {
             return Messages.HeavyJobProperty_DisplayName();
         }
+        
+        @Override
+        public boolean isApplicable(Class<? extends Job> job) {
+            return true;
+        }
     }
 
     public static class ExecutableImpl implements Executable {
@@ -113,6 +164,10 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
 
         public void run() {
             // nothing. we just waste time
+        }
+
+        public long getEstimatedDuration() {
+            return parent.getEstimatedDuration();
         }
     }
 }

@@ -26,4 +26,7 @@ THE SOFTWARE.
   <f:entry title="${%Job Weight}" field="weight">
     <f:textbox default="1" />
   </f:entry>
+  <f:entry title="${%Use All Executors}" field="allExecutorsEnabled">
+    <f:checkbox/>
+  </f:entry>
 </j:jelly>

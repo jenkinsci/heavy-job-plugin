@@ -137,5 +137,10 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
     public void run() {
       // nothing. we just waste time
     }
+
+	@Override
+	public long getEstimatedDuration() {
+		return executor.getCurrentWorkUnit().context.getPrimaryWorkUnit().getExecutable().getEstimatedDuration();
+	}
   }
 }

@@ -105,9 +105,7 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
    * @return Returns the number of executors available on the node.
    */
   private int getExecutors() {
-    final Computer computer = Computer.currentComputer();
-    final Node node = computer.getNode();
-    return node.getNumExecutors();
+    return Computer.currentComputer().getNumExecutors();
   }
 
   @Extension

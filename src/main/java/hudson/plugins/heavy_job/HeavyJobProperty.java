@@ -34,6 +34,7 @@ import hudson.model.Node;
 import hudson.model.Queue.Executable;
 import hudson.model.Queue.Task;
 import hudson.model.queue.AbstractSubTask;
+import hudson.model.queue.Executables;
 import hudson.model.queue.SubTask;
 
 import java.io.IOException;
@@ -138,7 +139,9 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
 
 	@Override
 	public long getEstimatedDuration() {
-		return executor.getCurrentWorkUnit().context.getPrimaryWorkUnit().getExecutable().getEstimatedDuration();
+		return 0;
 	}
+
+
   }
 }

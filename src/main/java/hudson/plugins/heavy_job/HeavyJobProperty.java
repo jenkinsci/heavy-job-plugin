@@ -131,23 +131,34 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?, ?>> {
 		// label. Also check if the label is master. When master we can't use
 		// node, so we get the Jenkins instance for master executor count. If
 		// it's not a self label or master, we default to the weight passed in.
-		if (label != null && label.isSelfLabel()
-				&& !label.getName().equalsIgnoreCase("master")) {
-			LOGGER.fine("Label: " + label.toString());
-			node = Jenkins.getInstance().getNode(label.getName());
-			LOGGER.fine("Number of executors: " + node.getNumExecutors());
-			LOGGER.fine("Name of node: " + node.getNodeName());
-			LOGGER.fine("Name of job: "
-					+ HeavyJobProperty.this.owner.getDisplayName());
-		} else if (label.getName().equalsIgnoreCase("master")) {
-			LOGGER.fine("Number of executors: "
-					+ Jenkins.getInstance().getNumExecutors());
-			LOGGER.fine("Name of node: "
-					+ Jenkins.getInstance().getDisplayName());
-			LOGGER.fine("Name of job: "
-					+ HeavyJobProperty.this.owner.getDisplayName());
-			return Jenkins.getInstance().getNumExecutors();
+		if (label != null) {
+			if (label.isSelfLabel()
+					&& !label.getName().equalsIgnoreCase("master")) {
+				LOGGER.fine("Label: " + label.toString());
+				node = Jenkins.getInstance().getNode(label.getName());
+				if (node != null) {
+					LOGGER.fine("Number of executors: "
+							+ node.getNumExecutors());
+					LOGGER.fine("Name of node: " + node.getNodeName());
+					LOGGER.fine("Name of job: "
+							+ HeavyJobProperty.this.owner.getDisplayName());
+				} else {
+					LOGGER.fine("Node was null, returning weight.");
+					return this.weight;
+				}
+			} else if (label.getName().equalsIgnoreCase("master")) {
+				LOGGER.fine("Number of executors: "
+						+ Jenkins.getInstance().getNumExecutors());
+				LOGGER.fine("Name of node: "
+						+ Jenkins.getInstance().getDisplayName());
+				LOGGER.fine("Name of job: "
+						+ HeavyJobProperty.this.owner.getDisplayName());
+				return Jenkins.getInstance().getNumExecutors();
+			} else {
+				return this.weight;
+			}
 		} else {
+			LOGGER.fine("Label was null, returning weight.");
 			return this.weight;
 		}
 

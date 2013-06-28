@@ -24,95 +24,164 @@
 package hudson.plugins.heavy_job;
 
 import hudson.Extension;
+import hudson.model.JobProperty;
+import hudson.model.JobPropertyDescriptor;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Executor;
-import hudson.model.JobProperty;
-import hudson.model.JobPropertyDescriptor;
+import hudson.model.Label;
+import hudson.model.Node;
 import hudson.model.Queue.Executable;
 import hudson.model.Queue.Task;
 import hudson.model.queue.AbstractSubTask;
 import hudson.model.queue.SubTask;
-import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+
+import jenkins.model.Jenkins;
+
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * Keeps track of the number of executors that need to be consumed for this job.
- *
+ * 
  * @author Kohsuke Kawaguchi
  */
-public class HeavyJobProperty extends JobProperty<AbstractProject<?,?>> {
-    public final int weight;
+public class HeavyJobProperty extends JobProperty<AbstractProject<?, ?>> {
+	public int weight;
+	public final boolean allExecutorsEnabled;
 
-    @DataBoundConstructor
-    public HeavyJobProperty(int weight) {
-        this.weight = weight;
-    }
+	private static final Logger LOGGER = Logger
+			.getLogger(HeavyJobProperty.class.getName());
 
-    @Override
-    public List<SubTask> getSubTasks() {
-        List<SubTask> r = new ArrayList<SubTask>();
-        for (int i=1; i< weight; i++)
-            r.add(new AbstractSubTask() {
-                public Executable createExecutable() throws IOException {
-                    return new ExecutableImpl(this);
-                }
+	@DataBoundConstructor
+	public HeavyJobProperty(final int weight, final boolean allExecutorsEnabled) {
+		this.weight = weight;
+		this.allExecutorsEnabled = allExecutorsEnabled;
+	}
 
-                @Override
-                public Object getSameNodeConstraint() {
-                    // must occupy the same node as the project itself
-                    return getProject();
-                }
+	@Override
+	public List<SubTask> getSubTasks() {
+		final List<SubTask> r = new ArrayList<SubTask>();
 
-                @Override
-                public long getEstimatedDuration() {
-                    return getProject().getEstimatedDuration();
-                }
+		// Store the weight before setting it to the maximum. So I can reset it
+		// after.
+		final int storedWeight = this.weight;
 
-                public Task getOwnerTask() {
-                    return getProject();
-                }
+		// Only if allExecutors is checked will we attempt to set the weight.
+		// Otherwise, we just use weight that was passed in.
+		if (allExecutorsEnabled) {
+			this.weight = getExecutors();
+		}
+		for (int i = 1; i < weight; i++) {
+			r.add(new AbstractSubTask() {
+				public Executable createExecutable() throws IOException {
+					return new ExecutableImpl(this);
+				}
 
-                public String getDisplayName() {
-                    return Messages.HeavyJobProperty_SubTaskDisplayName(getProject().getDisplayName());
-                }
+				@Override
+				public Object getSameNodeConstraint() {
+					// must occupy the same node as the project itself
+					return getProject();
+				}
 
-                private AbstractProject<?, ?> getProject() {
-                    return HeavyJobProperty.this.owner;
-                }
-            });
-        return r;
-    }
+				@Override
+				public long getEstimatedDuration() {
+					return getProject().getEstimatedDuration();
+				}
 
-    @Extension
-    public static class DescriptorImpl extends JobPropertyDescriptor {
-        @Override
-        public String getDisplayName() {
-            return Messages.HeavyJobProperty_DisplayName();
-        }
-    }
+				public Task getOwnerTask() {
+					return getProject();
+				}
 
-    public static class ExecutableImpl implements Executable {
-        private final SubTask parent;
-        private final Executor executor = Executor.currentExecutor();
+				public String getDisplayName() {
+					return Messages
+							.HeavyJobProperty_SubTaskDisplayName(getProject()
+									.getDisplayName());
+				}
 
-        private ExecutableImpl(SubTask parent) {
-            this.parent = parent;
-        }
+				private AbstractProject<?, ?> getProject() {
+					return HeavyJobProperty.this.owner;
+				}
+			});
+		}
+		this.weight = storedWeight;
+		return r;
+	}
 
-        public SubTask getParent() {
-            return parent;
-        }
+	/**
+	 * @return Returns the number of executors available on the node.
+	 */
+	private int getExecutors() {
+		Node node = null;
 
-        public AbstractBuild<?,?> getBuild() {
-            return (AbstractBuild<?,?>)executor.getCurrentWorkUnit().context.getPrimaryWorkUnit().getExecutable();
-        }
+		// Get the label. Have to get the QueueItem if the build goes to Queue.
+		Label label = (HeavyJobProperty.this.owner.getAssignedLabel() != null) ? HeavyJobProperty.this.owner
+				.getAssignedLabel() : HeavyJobProperty.this.owner
+				.getQueueItem().getAssignedLabel();
 
-        public void run() {
-            // nothing. we just waste time
-        }
-    }
+		// Check to see it got the label object. Since we want to be certain we
+		// get the correct node, we check to make sure that the label is a self
+		// label. Also check if the label is master. When master we can't use
+		// node, so we get the Jenkins instance for master executor count. If
+		// it's not a self label or master, we default to the weight passed in.
+		if (label != null) {
+			if (label.isSelfLabel()
+					&& !label.getName().equalsIgnoreCase("master")) {
+				node = Jenkins.getInstance().getNode(label.getName());
+				if (node == null) {
+					LOGGER.fine("Node was null, returning set weight.");
+					return this.weight;
+				}
+			} else if (label.getName().equalsIgnoreCase("master")) {
+				return Jenkins.getInstance().getNumExecutors();
+			} else {
+				return this.weight;
+			}
+		} else {
+			LOGGER.fine("Label was null, returning set weight.");
+			return this.weight;
+		}
+
+		return node.getNumExecutors();
+	}
+
+	@Extension
+	public static class DescriptorImpl extends JobPropertyDescriptor {
+		@Override
+		public String getDisplayName() {
+			return Messages.HeavyJobProperty_DisplayName();
+		}
+	}
+
+	public static class ExecutableImpl implements Executable {
+		private final SubTask parent;
+		private final Executor executor = Executor.currentExecutor();
+
+		private ExecutableImpl(final SubTask parent) {
+			this.parent = parent;
+		}
+
+		public SubTask getParent() {
+			return parent;
+		}
+
+		public AbstractBuild<?, ?> getBuild() {
+			return (AbstractBuild<?, ?>) executor.getCurrentWorkUnit().context
+					.getPrimaryWorkUnit().getExecutable();
+		}
+
+		public void run() {
+			// nothing. we just waste time
+		}
+
+		@Override
+		public long getEstimatedDuration() {
+			return parent.getEstimatedDuration();
+		}
+
+	}
 }

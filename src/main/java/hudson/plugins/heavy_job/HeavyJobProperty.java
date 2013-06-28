@@ -74,10 +74,7 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?, ?>> {
 		// Only if allExecutors is checked will we attempt to set the weight.
 		// Otherwise, we just use weight that was passed in.
 		if (allExecutorsEnabled) {
-			LOGGER.fine("Got allExecutorsEnabled setting weight");
 			this.weight = getExecutors();
-			LOGGER.fine("Job is: " + this.owner.getDisplayName());
-			LOGGER.fine("Weight is: " + this.weight);
 		}
 		for (int i = 1; i < weight; i++) {
 			r.add(new AbstractSubTask() {
@@ -134,31 +131,18 @@ public class HeavyJobProperty extends JobProperty<AbstractProject<?, ?>> {
 		if (label != null) {
 			if (label.isSelfLabel()
 					&& !label.getName().equalsIgnoreCase("master")) {
-				LOGGER.fine("Label: " + label.toString());
 				node = Jenkins.getInstance().getNode(label.getName());
-				if (node != null) {
-					LOGGER.fine("Number of executors: "
-							+ node.getNumExecutors());
-					LOGGER.fine("Name of node: " + node.getNodeName());
-					LOGGER.fine("Name of job: "
-							+ HeavyJobProperty.this.owner.getDisplayName());
-				} else {
-					LOGGER.fine("Node was null, returning weight.");
+				if (node == null) {
+					LOGGER.fine("Node was null, returning set weight.");
 					return this.weight;
 				}
 			} else if (label.getName().equalsIgnoreCase("master")) {
-				LOGGER.fine("Number of executors: "
-						+ Jenkins.getInstance().getNumExecutors());
-				LOGGER.fine("Name of node: "
-						+ Jenkins.getInstance().getDisplayName());
-				LOGGER.fine("Name of job: "
-						+ HeavyJobProperty.this.owner.getDisplayName());
 				return Jenkins.getInstance().getNumExecutors();
 			} else {
 				return this.weight;
 			}
 		} else {
-			LOGGER.fine("Label was null, returning weight.");
+			LOGGER.fine("Label was null, returning set weight.");
 			return this.weight;
 		}
 

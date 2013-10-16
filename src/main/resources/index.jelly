@@ -1,0 +1,3 @@
+<div>
+    This plugin allows you to define "weight" on each job, and making each job consume that many executors (instead of just one.) Useful for a job that's parallelized by itself, so that Hudson can schedule jobs accordingly.
+</div>

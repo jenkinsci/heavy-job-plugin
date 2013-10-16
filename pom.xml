@@ -2,51 +2,29 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.jvnet.hudson.plugins</groupId>
+    <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.377</version>
-    <relativePath>../pom.xml</relativePath>
+    <version>1.424</version>
   </parent>
   
   <artifactId>heavy-job</artifactId>
   <version>1.1-SNAPSHOT</version>
   <packaging>hpi</packaging>
-  <name>Hudson heavy job plugin</name>
-  <url>http://wiki.hudson-ci.org/display/HUDSON/Heavy+Job+Plugin</url>
+  <name>Heavy Job Plugin</name>
+  <description>This plugin allows you to define "weight" on each job, and making each job consume that many executors (instead of just one.) Useful for a job that's parallelized by itself, so that Hudson can schedule jobs accordingly.</description>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/Heavy+Job+Plugin</url>
 
-  <!--dependencies>
-    <dependency>
-      <groupId>org.jvnet.hudson.main</groupId>
-      <artifactId>hudson-war</artifactId>
-      <type>war</type>
-      <version>1.377-SNAPSHOT</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jvnet.hudson.main</groupId>
-      <artifactId>hudson-core</artifactId>
-      <version>1.377-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jvnet.hudson.main</groupId>
-      <artifactId>hudson-test-harness</artifactId>
-      <version>1.377-SNAPSHOT</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jvnet.hudson.main</groupId>
-      <artifactId>maven-plugin</artifactId>
-      <version>1.377-SNAPSHOT</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jvnet.hudson.main</groupId>
-      <artifactId>ui-samples-plugin</artifactId>
-      <version>1.377-SNAPSHOT</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies-->
+    <licenses>
+        <license>
+            <name>MIT</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+        </license>
+    </licenses>
+    <scm>
+        <connection>scm:git:git://github.com/jenkinsci/${project.artifactId}-plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:jenkinsci/${project.artifactId}-plugin.git</developerConnection>
+        <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
+    </scm>
 
     <repositories>
         <repository>

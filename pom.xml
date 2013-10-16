@@ -8,7 +8,7 @@
   </parent>
   
   <artifactId>heavy-job</artifactId>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1</version>
   <packaging>hpi</packaging>
   <name>Heavy Job Plugin</name>
   <description>This plugin allows you to define "weight" on each job, and making each job consume that many executors (instead of just one.) Useful for a job that's parallelized by itself, so that Hudson can schedule jobs accordingly.</description>
